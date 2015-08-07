@@ -17,11 +17,11 @@ import javax.swing.JTextArea;
 
 public class MyDevicesSync extends JFrame {
     JTextArea contents;
-    JLabel error = new JLabel(""), 
-           interfaceHeading = new JLabel("Interface Information"),  
-           interfaceSpacer = new JLabel("---------------------"),
-           contentHeading = new JLabel("Input Message Here"),
-           deviceHeading = new JLabel("Devices");
+    JLabel error = new JLabel(), 
+           interfaceHeading = new JLabel(Constants.interfaceHeader),  
+           interfaceSpacer = new JLabel(Constants.formatHyphenBreak(Constants.interfaceHeader)),
+           contentHeading = new JLabel(Constants.inputMessage),
+           deviceHeading = new JLabel(Constants.deviceHeader);
     static JLabel interfaceInfo = new JLabel();
     JPanel deviceHierarchy, buttonPanel, contentPanel, devicePanel;
     JButton addDevice, removeDevice, send, receive;
@@ -31,7 +31,7 @@ public class MyDevicesSync extends JFrame {
     ArrayList<String> fileUploads;
     
     MyDevicesSync() {
-        super("Device Manager");
+        super(Constants.appTitle);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         Dimension d = new Dimension(600, 600);
         setBounds(0, 0, d.height, d.width);
@@ -48,24 +48,24 @@ public class MyDevicesSync extends JFrame {
             for (Device device : manager.getDevices()) 
                 deviceHierarchy.add(device.button);
         else
-            deviceHeading.setText("No Devices");
+            deviceHeading.setText(Constants.noDevices);
         
         devicePanel = new JPanel();
         devicePanel.setLayout(new BoxLayout(devicePanel, BoxLayout.Y_AXIS));
         
-        addDevice = new JButton("Add Device");
+        addDevice = new JButton(Constants.addButtonPrompt);
             addDevice.addActionListener(new ActionListener() { 
                 public void actionPerformed(ActionEvent e) {
                     String name = JOptionPane.showInputDialog(null,     //Frame size
                                             null,                       //Input Values
-                                            "Input the device name",    //Title
+                                            Constants.inputName,        //Title
                                             JOptionPane.PLAIN_MESSAGE); //Option type
                     if (name == null)
                         return;
                     else {
                         String ip = JOptionPane.showInputDialog(null, 
                                                 null,
-                                                "Input the device IP address",
+                                                Constants.inputIP,
                                                 JOptionPane.PLAIN_MESSAGE);                        
                         if (ip == null) 
                             return;
@@ -76,8 +76,8 @@ public class MyDevicesSync extends JFrame {
                                 deviceHierarchy.validate();
                             } else {
                                 ip = JOptionPane.showInputDialog(null,                                                           
-                                        "The ip: " + ip + " is invalid",
-                                        "Input the device IP address",
+                                        Constants.formatInvalidIP(ip),
+                                        Constants.inputIP,
                                         JOptionPane.PLAIN_MESSAGE);
                                 if (ConnectionManager.validateIP(ip)) {
                                     System.out.println(manager.getDeviceSize());
@@ -88,8 +88,8 @@ public class MyDevicesSync extends JFrame {
                                     deviceHierarchy.validate();
                                 } else
                                     JOptionPane.showConfirmDialog(null, 
-                                        "The device failed to add",
-                                        "Input the device IP address",
+                                        Constants.deviceAddFailed,
+                                        Constants.inputIP,
                                         JOptionPane.PLAIN_MESSAGE);
                             }
                         }
@@ -97,14 +97,14 @@ public class MyDevicesSync extends JFrame {
                 }
             });
             
-        removeDevice = new JButton("Remove Device");
+        removeDevice = new JButton(Constants.removeDevice);
             removeDevice.addActionListener(new ActionListener() {
                public void actionPerformed(ActionEvent e) {
                    manager.removeDevice(manager.getIdx());
                } 
             });
             
-        send = new JButton("Send Data");
+        send = new JButton(Constants.sendData);
             send.addActionListener(new ActionListener() {
                public void actionPerformed(ActionEvent e) {
                    //showNewMessage("testing", "testing");
@@ -156,15 +156,14 @@ public class MyDevicesSync extends JFrame {
         interfaceInfo.setText(ip);
     }
     public static void showNewMessage(String ip, String data) {
-        JOptionPane.showConfirmDialog(null, data, "Data from ip: " + ip, JOptionPane.PLAIN_MESSAGE);
-    }
-        
+        JOptionPane.showConfirmDialog(null, data, Constants.messageTitle + ip, JOptionPane.PLAIN_MESSAGE);
+    }        
     public static void showErrorMessage(String error) {
-        JOptionPane.showConfirmDialog(null, "Error", error, JOptionPane.PLAIN_MESSAGE);
+        JOptionPane.showConfirmDialog(null, Constants.error, error, JOptionPane.PLAIN_MESSAGE);
     }
     public static void main(String[] args) {
         //new MyDevicesSync();
         //new Configuration(null).getConfiguration(null);
-        new FileChooser(null);
+        //new FileChooser(null);//new MyDevicesSync());
     }   
 }

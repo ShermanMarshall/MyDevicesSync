@@ -71,6 +71,7 @@ public class ConnectionManager {
                 read(s);
             else
                 write(s);
+            
         } catch (IOException e) {
             gui.showErrorMessage("Connection could not be handled");
         }
@@ -117,7 +118,7 @@ public class ConnectionManager {
             is.close();
             s.close();
         } catch (IOException e) {
-            gui.showErrorMessage("Message encountered an IOException");
+            gui.showErrorMessage(Constants.IOE);
         }
     }
     
@@ -134,6 +135,6 @@ public class ConnectionManager {
                 return false;
             }
         //Ensure loopback is not included
-        return ip.equals("127.0.0.1") ? false : true;
+        return ip.equals(Constants.localhost) ? false : true;
     }
 }
