@@ -28,8 +28,14 @@ public class Constants {
     static final String sendData = "Send Data";
     static final String IOE = "Message encountered an IOException";
     static final String localhost = "127.0.0.1";
+    static final String noDirectoryInFavorites = "No directory in favorites to select from";
+    
+    //File extensions
+    static final String txtFile = "txt";
     
     static int sleepInterval = 500;
+    
+    static byte colon = (byte) 58;
     
     static String formatInvalidIP (String ip) {
         return "The ip: " + ip + " is invalid";

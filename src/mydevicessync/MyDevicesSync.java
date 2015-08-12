@@ -6,6 +6,7 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.ArrayList;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -29,6 +30,7 @@ public class MyDevicesSync extends JFrame {
     ConnectionManager connectionManager;
     Configuration configuration;
     ArrayList<String> fileUploads;
+    File fileSelected;
     
     MyDevicesSync() {
         super(Constants.appTitle);
@@ -164,6 +166,6 @@ public class MyDevicesSync extends JFrame {
     public static void main(String[] args) {
         //new MyDevicesSync();
         //new Configuration(null).getConfiguration(null);
-        //new FileChooser(null);//new MyDevicesSync());
+        new FileChooser(null);//new MyDevicesSync());
     }   
 }

@@ -137,4 +137,26 @@ public class ConnectionManager {
         //Ensure loopback is not included
         return ip.equals(Constants.localhost) ? false : true;
     }
+    
+    //Protocol format: totalLengthInBytes:fileType:fileLength
+    //Byte-array format: #CharsInLength:fileLength:fileType
+    public static byte[] prepareFileDataForSend(File file) throws IOException, FileNotFoundException {
+        long length = file.length();
+        String strLength = Long.toString(length);
+        byte[] data = new byte[strLength.length() + 1 + ((int) length) + 1 + Constants.txtFile.length()];
+        for (int x = 0; x < strLength.length(); x++)
+                data[x] = (byte) strLength.charAt(x);
+
+        data[strLength.length()] = Constants.colon;
+
+        FileInputStream fis = new FileInputStream(file);
+        fis.read(data, strLength.length() + 1, (int) length);
+        data[strLength.length() + ((int) length) + 1] = Constants.colon;
+
+        for (int x = 1; x <= Constants.txtFile.length(); x++)
+                data[strLength.length() + ((int) length) + 1 + x] = (byte) Constants.txtFile.charAt(x-1);
+
+        return data;
+    }
+
 }
