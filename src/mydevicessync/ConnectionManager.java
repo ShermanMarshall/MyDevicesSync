@@ -2,7 +2,9 @@ package mydevicessync;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Collections;
 
 public class ConnectionManager {
     String data, ip; 
@@ -25,13 +27,14 @@ public class ConnectionManager {
                     String[] set = ia.getHostAddress().split(":");
                     if (set.length == 1) {
                         ip = set[0];
-                        prepareServer();
+                        MyDevicesSync.update(ip);
+                        prepareServer();                        
                         return;
                     }
                 }
             }
         } catch (SocketException e) {
-            gui.showErrorMessage("Unable to identify network interface");
+            gui.showErrorMessage(Constants.configFailError);
             active = startServer = false;
         }
     }
@@ -40,18 +43,18 @@ public class ConnectionManager {
         Thread t = new Thread(new Runnable() {
             public void run() {
                 try {
-                    ss = new ServerSocket(30000, 1, InetAddress.getByName(ip));
-                    System.out.println("Server Active");
+                    ss = new ServerSocket(30000, 1, InetAddress.getByName(ip));                    
                     while (active) {
                         Socket s = ss.accept();
+                        //handleConnection(s);
                         read(s);
                     }
                     ss.close();
                     prepareServer();
                 } catch (NumberFormatException nfe) {
-                    gui.showErrorMessage("Message length parse failed");
+                    gui.showErrorMessage(Constants.numberFormatError);
                 } catch (IOException e) {
-                    gui.showErrorMessage("Server shut down. Restarting");
+                    gui.showErrorMessage(Constants.serverRestart);
                     active = false;
                 }
             } 
@@ -67,13 +70,13 @@ public class ConnectionManager {
             while ((data = (byte) is.read()) != ':')
                 type += (char) data;
             
-            if (type.equals("read"))
+            if (type.equals(Constants.readMessage))
                 read(s);
             else
                 write(s);
             
         } catch (IOException e) {
-            gui.showErrorMessage("Connection could not be handled");
+            gui.showErrorMessage(Constants.connectionIOError);
         }
     }
     
@@ -91,11 +94,11 @@ public class ConnectionManager {
             } else
                 gui.showErrorMessage("No messages in message queue");
         } catch (IOException e) {
-            gui.showErrorMessage("Error sending data to device");
+            gui.showErrorMessage(Constants.writeError);
         }
     }
     
-    public void read(Socket s) {
+    public void read(Socket s) throws NumberFormatException {
         try {
             InputStream is = s.getInputStream();
             String ip = new String(s.getInetAddress().getHostAddress());           

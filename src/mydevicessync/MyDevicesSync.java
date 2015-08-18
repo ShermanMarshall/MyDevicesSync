@@ -7,30 +7,35 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.ArrayList;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 public class MyDevicesSync extends JFrame {
-    JTextArea contents;
-    JLabel error = new JLabel(), 
+    private JTextArea contents;
+    private JScrollPane contentScroller;
+    private JLabel error = new JLabel(), 
            interfaceHeading = new JLabel(Constants.interfaceHeader),  
-           interfaceSpacer = new JLabel(Constants.formatHyphenBreak(Constants.interfaceHeader)),
+           //interfaceSpacer = new JLabel(Constants.formatHyphenBreak(Constants.interfaceHeader)),
            contentHeading = new JLabel(Constants.inputMessage),
            deviceHeading = new JLabel(Constants.deviceHeader);
-    static JLabel interfaceInfo = new JLabel();
-    JPanel deviceHierarchy, buttonPanel, contentPanel, devicePanel;
-    JButton addDevice, removeDevice, send, receive;
-    DeviceManager manager;
-    ConnectionManager connectionManager;
-    Configuration configuration;
-    ArrayList<String> fileUploads;
-    File fileSelected;
+           //fileHeading = new JLabel(Constants.fileHeader);
+    private static JLabel interfaceInfo = new JLabel(),
+                         fileToBeLoaded = new JLabel(Constants.prepareFileLabel(null));
+    
+    private JPanel deviceHierarchy, buttonPanel, contentPanel, devicePanel;
+    private JButton addDeviceButton, removeDeviceButton, sendButton, receiveButton, addFileButton;
+    
+    private DeviceManager manager;
+    private ConnectionManager connectionManager;
+    private Configuration configuration;
+    private File fileSelected;
     
     MyDevicesSync() {
         super(Constants.appTitle);
@@ -40,23 +45,26 @@ public class MyDevicesSync extends JFrame {
         
         connectionManager = new ConnectionManager(this);                
         manager = new DeviceManager();
-        contents = new JTextArea(100, 33);
+        contents = new JTextArea(100, 50);
         
         deviceHierarchy = new JPanel();
         deviceHierarchy.setLayout(new BoxLayout(deviceHierarchy, BoxLayout.Y_AXIS));
         deviceHierarchy.add(deviceHeading);
         
         if (manager.devicesLoaded())
-            for (Device device : manager.getDevices()) 
+            for (Device device : manager.getDevices()) {
+                
+                //device.button.setHorizontalAlignment();
                 deviceHierarchy.add(device.button);
+            }
         else
             deviceHeading.setText(Constants.noDevices);
         
         devicePanel = new JPanel();
         devicePanel.setLayout(new BoxLayout(devicePanel, BoxLayout.Y_AXIS));
         
-        addDevice = new JButton(Constants.addButtonPrompt);
-            addDevice.addActionListener(new ActionListener() { 
+        addDeviceButton = new JButton(Constants.addButtonPrompt);
+            addDeviceButton.addActionListener(new ActionListener() { 
                 public void actionPerformed(ActionEvent e) {
                     String name = JOptionPane.showInputDialog(null,     //Frame size
                                             null,                       //Input Values
@@ -74,20 +82,21 @@ public class MyDevicesSync extends JFrame {
                         else {
                             if (ConnectionManager.validateIP(ip)) {
                                 manager.addDevice(name, ip);
-                                devicePanel.add(manager.getDevices().get(manager.getDeviceSize()-1).button);
-                                deviceHierarchy.validate();
+                                JButton button = manager.getDevices().get(manager.getDeviceSize()-1).button;
+                                button.setHorizontalAlignment(JButton.CENTER);
+                                devicePanel.add(button);
+                                deviceHierarchy.invalidate();
                             } else {
                                 ip = JOptionPane.showInputDialog(null,                                                           
                                         Constants.formatInvalidIP(ip),
                                         Constants.inputIP,
                                         JOptionPane.PLAIN_MESSAGE);
                                 if (ConnectionManager.validateIP(ip)) {
-                                    System.out.println(manager.getDeviceSize());
                                     manager.addDevice(name, ip);                                    
-                                    
-                                    devicePanel.add(manager.getDevices().get(manager.getDeviceSize() - 1).button);
-                                    System.out.println(manager.getDeviceSize());
-                                    deviceHierarchy.validate();
+                                    JButton button = manager.getDevices().get(manager.getDeviceSize()-1).button;
+                                    button.setHorizontalAlignment(JButton.CENTER);
+                                    devicePanel.add(button);
+                                    deviceHierarchy.invalidate();
                                 } else
                                     JOptionPane.showConfirmDialog(null, 
                                         Constants.deviceAddFailed,
@@ -99,63 +108,82 @@ public class MyDevicesSync extends JFrame {
                 }
             });
             
-        removeDevice = new JButton(Constants.removeDevice);
-            removeDevice.addActionListener(new ActionListener() {
+        removeDeviceButton = new JButton(Constants.removeDevice);
+            removeDeviceButton.addActionListener(new ActionListener() {
                public void actionPerformed(ActionEvent e) {
                    manager.removeDevice(manager.getIdx());
                } 
             });
             
-        send = new JButton(Constants.sendData);
-            send.addActionListener(new ActionListener() {
+        sendButton = new JButton(Constants.sendData);
+            sendButton.addActionListener(new ActionListener() {
                public void actionPerformed(ActionEvent e) {
+                   System.out.println(e.getActionCommand());
                    //showNewMessage("testing", "testing");
                    //connectionManager.write(manager.getDeviceIP(), contents.getText());
                } 
             });
+        final MyDevicesSync reference = this;
+        addFileButton = new JButton(Constants.addFileButtonPrompt);
+            addFileButton.addActionListener(new ActionListener(){
+               public void actionPerformed(ActionEvent e) {                   
+                   new FileChooser(reference);
+               } 
+            });
             
-        /*
-        receive = new JButton("Receive Data");
-            receive.addActionListener(new ActionListener() {
+        receiveButton = new JButton("Receive Data");
+            receiveButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     
                 }
             });
-        */
             
         JPanel deviceButtons = new JPanel(new FlowLayout());
-        deviceButtons.add(addDevice);
-        deviceButtons.add(removeDevice);
+        deviceButtons.add(addDeviceButton);
+        deviceButtons.add(removeDeviceButton);
         
         deviceHierarchy.add(devicePanel);
         deviceHierarchy.add(deviceButtons);
         
         buttonPanel = new JPanel(new GridLayout(1, 2));
-        buttonPanel.add(send);
+        buttonPanel.add(sendButton);
         //buttonPanel.add(receive);
         
-        contentPanel = new JPanel();
+        contentScroller = new JScrollPane();
+        contentScroller.setViewportView(contents);
+        //contentScroller.setAlignmentX(0.0f);
+        
+        contentPanel = new JPanel();        
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+            //interfaceHeading.setAlignmentX(0.0f);
         contentPanel.add(interfaceHeading);
+            //interfaceInfo.setAlignmentX(0.0f);
         contentPanel.add(interfaceInfo);
         contentPanel.add(contentHeading);
-        contentPanel.add(contents);
+        contentPanel.add(contentScroller);
+        //contentPanel.add(fileHeading);
+        contentPanel.add(fileToBeLoaded);
+        contentPanel.add(addFileButton);
         
+        //contentPanel.setSize(new Dimension(300, 300));
+        deviceHierarchy.setSize(50, 300);
         add(error, BorderLayout.NORTH);    
-        add(buttonPanel, BorderLayout.SOUTH);
+        add(buttonPanel, BorderLayout.SOUTH);        
         add(contentPanel, BorderLayout.CENTER);
-        add(deviceHierarchy, BorderLayout.WEST);        
+        add(deviceHierarchy, BorderLayout.WEST);      
+        pack();
         setVisible(true);
         configuration = new Configuration();
     }
-    public void addUpload(String filename) {
-        if (fileUploads == null)
-            fileUploads = new ArrayList<>();
+    public void addUpload(File file) {
+        fileSelected = file;
+        if (!file.isDirectory())           
+            fileToBeLoaded.setText(Constants.prepareFileLabel(file.getName()));
         else
-            fileUploads.add(filename);
+            System.out.println(file.getName());
     }
     public static void update (String ip) {
-        interfaceInfo.setText(ip);
+        interfaceInfo.setText(Constants.prepareInterfaceInfo(ip));
     }
     public static void showNewMessage(String ip, String data) {
         JOptionPane.showConfirmDialog(null, data, Constants.messageTitle + ip, JOptionPane.PLAIN_MESSAGE);
@@ -164,8 +192,6 @@ public class MyDevicesSync extends JFrame {
         JOptionPane.showConfirmDialog(null, Constants.error, error, JOptionPane.PLAIN_MESSAGE);
     }
     public static void main(String[] args) {
-        //new MyDevicesSync();
-        //new Configuration(null).getConfiguration(null);
-        new FileChooser(null);//new MyDevicesSync());
+        new MyDevicesSync();
     }   
 }

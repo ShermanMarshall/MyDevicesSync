@@ -22,58 +22,100 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
-/*
- *
- * @author admin
- */
+/* @author admin */
 public class FileChooser extends JFrame {
-
-    String[] favorites;
-    String[] contents;
-    JPanel container, favoritePanel, selectPanel, savePanel;
+    String[] favorites, contents;
+    JPanel container, favoritePanel, selectPanel, savePanel, selectPanelHeader;
+    JLabel workingDirectory;
     JTextField fileSelection;
-    JButton upload;
+    JButton uploadButton, directoryBackButton;
     JScrollPane favoriteScroller, selectScroller;
     MyDevicesSync reference;
     FileChooser thisReference;
     FileField[] favoriteFiles, selectionFiles;
+    FileField currentSelection;
+    ArrayList<String> directories;
+    boolean favoriteSelected;
 
     public FileChooser(final MyDevicesSync reference) {
-        super("Select File");
+        super("Select File");       
         this.reference = reference;
         thisReference = this;
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
         setBounds(d.width / 2 - (d.width / 10), d.height / 2 - (d.height / 5), 400, 400);
         fileSelection = new JTextField();
-        final FileChooser destroy = this;
-        upload = new JButton("Add File");
-        upload.addActionListener(new ActionListener() {
+        selectScroller = new JScrollPane();
+        favoriteScroller = new JScrollPane();
+        uploadButton = new JButton("Add File");
+        uploadButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                File validate = new File(fileSelection.getText());
-                try {
-                    FileInputStream fos = new FileInputStream(validate);
-                } catch (FileNotFoundException ee) {
-                }
-                int option;
-                if (validate.exists() && (validate.listFiles() != null)) {
-                    reference.addUpload(fileSelection.getText());
-                } else {
-                    option = JOptionPane.showConfirmDialog(
+                String fileName;
+                //for (File f : ((favoriteSelected) ? favoriteFiles : selectionFiles))
+                File validate = new File(currentSelection.getPath());
+                try { FileInputStream fos = new FileInputStream(validate); } 
+                    catch (FileNotFoundException ee) { validate = null; }
+                
+                int option = 0;
+                if (validate == null)
+                    option = 1;
+                else if (validate.isDirectory()) 
+                    option = 2;
+                else if (!validate.exists())
+                    option = 3;
+                
+                switch (option) {
+                    case 0:
+                        option = JOptionPane.NO_OPTION;
+                        break;
+                    case 1:
+                        option = JOptionPane.showConfirmDialog(
                             null, //Parent Component
-                            Constants.fileError, //Message
+                            Constants.prepareFileError(null), //Message
                             Constants.fileErrorTitle, //Title
                             JOptionPane.YES_NO_OPTION //JOP type
-                    );
-                    if (option == JOptionPane.NO_OPTION) {
-                        destroy.dispose();
-                    }
+                        ); break;
+                    case 2:
+                        option = JOptionPane.showConfirmDialog(
+                            null, //Parent Component
+                            Constants.prepareFileError(validate.getName()), //Message
+                            Constants.fileErrorTitle, //Title
+                            JOptionPane.YES_NO_OPTION //JOP type
+                        ); break;
+                    default: 
+                        option = JOptionPane.NO_OPTION;
+                        break;
+                }
+                if (option == JOptionPane.NO_OPTION) 
+                    reference.dispose();
+                else {
+                    fileSelection.setText("");
+                    clearFiles();
                 }
             }
         });
-
+        
+        directoryBackButton = new JButton(Constants.directoryBackButton);
+        directoryBackButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (directories.isEmpty())
+                    return;
+                System.out.println(directories.get(directories.size()-1));
+                prepareMain(new File(directories.get(directories.size()-1)));
+                directories.remove(directories.size()-1);
+            }
+        });
+        directories = new ArrayList<>();
+        workingDirectory = new JLabel();
+        selectPanelHeader = new JPanel();
+        selectPanelHeader.setLayout(new BoxLayout(selectPanelHeader, BoxLayout.X_AXIS));
+        
+        selectPanelHeader.add(directoryBackButton);
+        selectPanelHeader.add(workingDirectory);
+        
         container = new JPanel(new BorderLayout());
         container.add(new JButton("title"), BorderLayout.NORTH);
+       
         add(prepareSavePanel(), BorderLayout.SOUTH);
         add(prepareFavorites(), BorderLayout.WEST);
 
@@ -82,7 +124,7 @@ public class FileChooser extends JFrame {
         boolean directoryFound = false;
         for (File findDirectory : files) {
             if (findDirectory.isDirectory()) {
-                add(prepareMain(findDirectory.getPath()), BorderLayout.CENTER);
+                add(prepareMain(findDirectory), BorderLayout.CENTER);
                 directoryFound = true;
                 break;
             }
@@ -97,7 +139,7 @@ public class FileChooser extends JFrame {
     public JPanel prepareSavePanel() {
         savePanel = new JPanel();
         savePanel.setLayout(new BoxLayout(savePanel, BoxLayout.X_AXIS));
-        savePanel.add(upload);
+        savePanel.add(uploadButton);
         savePanel.add(fileSelection);       
         return savePanel;
     }
@@ -123,14 +165,11 @@ public class FileChooser extends JFrame {
                 System.out.println(e.getMessage());
             }
         }
-        favoriteScroller = new JScrollPane();
         favoriteScroller.setViewportView(favoritePanel);
         return favoriteScroller;
     }
 
-    public JScrollPane prepareMain(String dirName) {
-        File file = new File(dirName);        
-        
+    public JScrollPane prepareMain(File file) {            
         if (file.isDirectory()) {
             ArrayList<File> files = new ArrayList<>();
             for (File f : file.listFiles())
@@ -140,7 +179,9 @@ public class FileChooser extends JFrame {
             files.toArray(list);
             selectPanel = new JPanel();
             selectPanel.setLayout(new BoxLayout(selectPanel, BoxLayout.Y_AXIS));
-            selectPanel.add(new JLabel(dirName));
+            selectPanel.add(selectPanelHeader);
+            workingDirectory.setText(file.getPath());                       
+            
             selectionFiles = new FileField[list.length];
             for (int x = 0; x < list.length; x++) {
                 selectionFiles[x] = prepareTextField(list[x], false);
@@ -150,8 +191,9 @@ public class FileChooser extends JFrame {
                     System.out.println(e.getMessage());
                 }
             }
-            selectScroller = new JScrollPane();
             selectScroller.setViewportView(selectPanel);
+            reference.validate();
+            System.out.println("Changing directory to: " + file.getPath());
             return selectScroller;
         } else {
             return null;
@@ -164,60 +206,65 @@ public class FileChooser extends JFrame {
         field.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                synchronized (field) {
-                    FileField[] array;
-                    if (favorite) {
-                        array = favoriteFiles;
-                    } else {
-                        array = selectionFiles;
-                    }
-
-                    for (FileField ff : array) {
-                        if (ff == field) {
-                            continue;
-                        } else {
-                            ff.clear();
-                        }
-                    }
-
-                    field.isClicked = !field.isClicked;
-                    if (field.isClicked) {
-                        field.setBackground(Color.blue);
-                    } else {
-                        field.setBackground(Color.white);
-                    }
-
-                    //if (System.currentTimeMillis() - field.getInterval() > Constants.sleepInterval)
-                    //  reference.fileSelected = new File(field.absolutePath);
-                    //reference.addUpload(field.getPath());
-                }
+                handleClick(field, favorite);
             }
-
             @Override
-            public void mousePressed(MouseEvent e) {
-            }
-
+            public void mousePressed(MouseEvent e) {}
             @Override
-            public void mouseReleased(MouseEvent e) {
-            }
-
+            public void mouseReleased(MouseEvent e) {}
             @Override
-            public void mouseEntered(MouseEvent e) {
-            }
-
+            public void mouseEntered(MouseEvent e) {}
             @Override
-            public void mouseExited(MouseEvent e) {
-            }
+            public void mouseExited(MouseEvent e) {}
         });
         return field;
     }
+    public void handleClick(FileField field, boolean favorite) {
+        synchronized (field) {
+            FileField[] array;
+            currentSelection = field;
+            favoriteSelected = favorite;
+            array = favorite ? favoriteFiles : selectionFiles; 
+            if (!field.isClicked)
+                for (FileField ff : array) 
+                    if (ff == field) field.isClicked = !field.isClicked; 
+                    else ff.clear();                   
+            field.setBackground(field.isClicked ? Color.blue : Color.white);  //Set color based on click status
+            if (System.currentTimeMillis() - field.getInterval() < Constants.sleepInterval) 
+                fileSelected();            
+            field.setInterval();
+        }
+    }
+    
+    public void fileSelected() {
+        File file = new File(currentSelection.getPath());
+        System.out.println(file.getPath());
+        if (file.isDirectory()) {
+            String[] path = file.getPath().split("/");
+            StringBuilder name = new StringBuilder();
+            for (int x = 0; x < path.length-1; x++) {
+                name.append(path[x]);
+                name.append('/');
+            }
+            directories.add(name.toString());
+            prepareMain(file);
+        } else {
+            reference.addUpload(file);
+            thisReference.dispose();
+        }
+    }
+    
+    public void clearFiles() {
+        for (FileField ff : favoriteFiles)
+            ff.clear();
+        for (FileField ff : selectionFiles)
+            ff.clear();
+    }
 
     private class FileField extends JTextField {
-
         private String absolutePath, name;
         boolean isClicked = false, isFavorite;
         private long clickInterval;
-
         public FileField(File f, boolean isFavorite) {
             absolutePath = f.getAbsolutePath();
             name = f.getName();
@@ -225,22 +272,13 @@ public class FileChooser extends JFrame {
             clickInterval = System.currentTimeMillis();
             this.isFavorite = isFavorite;
         }
-
-        String getPath() {
-            return absolutePath;
-        }
-
-        String getPathName() {
-            return name;
-        }
-
-        long getInterval() {
-            return clickInterval;
-        }
-
+        String getPath() { return absolutePath; }
+        String getPathName() { return name; }
+        long getInterval() { return clickInterval; }
+        void setInterval() { clickInterval = System.currentTimeMillis(); }
         void clear() {
             isClicked = false;
-            setBackground(Color.white);
+            setBackground(Color.white);            
         }
     }
 }

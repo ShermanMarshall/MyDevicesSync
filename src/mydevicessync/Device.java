@@ -36,5 +36,6 @@ public class Device {
                manager.setIdx(button);
            } 
         });
+        button.setAlignmentX(0.5f);
     }
 }
