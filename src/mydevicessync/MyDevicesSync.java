@@ -51,17 +51,15 @@ public class MyDevicesSync extends JFrame {
         deviceHierarchy.setLayout(new BoxLayout(deviceHierarchy, BoxLayout.Y_AXIS));
         deviceHierarchy.add(deviceHeading);
         
-        if (manager.devicesLoaded())
-            for (Device device : manager.getDevices()) {
-                
-                //device.button.setHorizontalAlignment();
-                deviceHierarchy.add(device.button);
-            }
-        else
-            deviceHeading.setText(Constants.noDevices);
-        
         devicePanel = new JPanel();
         devicePanel.setLayout(new BoxLayout(devicePanel, BoxLayout.Y_AXIS));
+        
+        if (manager.devicesLoaded()) 
+            for (Device device : manager.getDevices()) {                
+                devicePanel.add(device.button);
+            }
+        else
+            deviceHeading.setText(Constants.noDevices);                
         
         addDeviceButton = new JButton(Constants.addButtonPrompt);
             addDeviceButton.addActionListener(new ActionListener() { 
@@ -85,7 +83,7 @@ public class MyDevicesSync extends JFrame {
                                 JButton button = manager.getDevices().get(manager.getDeviceSize()-1).button;
                                 button.setHorizontalAlignment(JButton.CENTER);
                                 devicePanel.add(button);
-                                deviceHierarchy.invalidate();
+                                deviceHierarchy.validate();
                             } else {
                                 ip = JOptionPane.showInputDialog(null,                                                           
                                         Constants.formatInvalidIP(ip),
@@ -96,7 +94,7 @@ public class MyDevicesSync extends JFrame {
                                     JButton button = manager.getDevices().get(manager.getDeviceSize()-1).button;
                                     button.setHorizontalAlignment(JButton.CENTER);
                                     devicePanel.add(button);
-                                    deviceHierarchy.invalidate();
+                                    deviceHierarchy.validate();
                                 } else
                                     JOptionPane.showConfirmDialog(null, 
                                         Constants.deviceAddFailed,
@@ -111,8 +109,18 @@ public class MyDevicesSync extends JFrame {
         removeDeviceButton = new JButton(Constants.removeDevice);
             removeDeviceButton.addActionListener(new ActionListener() {
                public void actionPerformed(ActionEvent e) {
-                   manager.removeDevice(manager.getIdx());
-               } 
+                    manager.removeDevice(manager.getIdx());
+                    devicePanel.removeAll();                  
+
+                    if (manager.devicesLoaded()) {
+                        deviceHeading.setText(Constants.deviceHeader);
+                        for (Device device : manager.getDevices()) {
+                            devicePanel.add(device.button);
+                        }
+                    } else
+                        deviceHeading.setText(Constants.noDevices);
+                    deviceHierarchy.validate();
+                } 
             });
             
         sendButton = new JButton(Constants.sendData);
@@ -161,11 +169,11 @@ public class MyDevicesSync extends JFrame {
         contentPanel.add(interfaceInfo);
         contentPanel.add(contentHeading);
         contentPanel.add(contentScroller);
-        //contentPanel.add(fileHeading);
+            //contentPanel.add(fileHeading);
         contentPanel.add(fileToBeLoaded);
         contentPanel.add(addFileButton);
         
-        //contentPanel.setSize(new Dimension(300, 300));
+            //contentPanel.setSize(new Dimension(300, 300));
         deviceHierarchy.setSize(50, 300);
         add(error, BorderLayout.NORTH);    
         add(buttonPanel, BorderLayout.SOUTH);        

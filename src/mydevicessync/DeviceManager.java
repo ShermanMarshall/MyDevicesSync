@@ -68,7 +68,8 @@ public class DeviceManager {
     }
     
     void removeDevice(int index) {
-        devices.remove(index);
+        if (deviceIdx != -1)
+            devices.remove(index);
         update();
         deviceIdx = -1;
     }
